@@ -19,7 +19,7 @@ def image_callback(data):
     global last_file_number,next_file_number,latest_cmd_vel,image_path,vel_path,cv_bridge
     
     # First off, if the latest cmd_vel was not moving, don't save any data (we don't want to train the robot to not move!)
-    if latest_cmd_vel.linear.x==0 && latest_cmd_vel.angular.z==0:
+    if latest_cmd_vel.linear.x==0 and latest_cmd_vel.angular.z==0:
         return
     
     image = cv_bridge.imgmsg_to_cv2(data,desired_encoding="bgr8")
