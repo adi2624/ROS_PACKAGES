@@ -12,7 +12,7 @@ latest_cmd_vel = 0
 last_file_number = -1
 next_file_number = 0
 cv_bridge = CvBridge()
-image_path = '/home/aditya/data/'
+image_path = '/home/aditya/data/images/'
 vel_path = '/home/aditya/data/vel/'
 
 def image_callback(data):
