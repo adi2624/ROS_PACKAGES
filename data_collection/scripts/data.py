@@ -12,15 +12,16 @@ latest_cmd_vel = 0
 last_file_number = -1
 next_file_number = 0
 cv_bridge = CvBridge()
-
-def listener():
-    rospy.init_node('data_collection_node',anonymous=True)
-    rospy.Subscriber('/camera/color/image_raw',Image,image_callback)
-    rospy.Subscriber('/cmd_vel',Twist,cmd_vel_callback)
-    rospy.spin()
+image_path = '/home/aditya/data/'
+vel_path = '/home/aditya/data/vel/'
 
 def image_callback(data):
-    global last_file_number,next_file_number
+    global last_file_number,next_file_number,latest_cmd_vel,image_path,vel_path,cv_bridge
+    
+    # First off, if the latest cmd_vel was not moving, don't save any data (we don't want to train the robot to not move!)
+    if latest_cmd_vel.linear.x==0 && latest_cmd_vel.angular.z==0:
+        return
+    
     image = cv_bridge.imgmsg_to_cv2(data,desired_encoding="bgr8")
     hsv = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
     lower_range = np.array([3, 100, 100], dtype=np.uint8)
@@ -30,28 +31,29 @@ def image_callback(data):
     if last_file_number==-1:
         files = os.listdir("/home/aditya/data/cmd_vel")
         files.sort()
-        last_file = files[-1]
-        last_file_number = int(last_file.split('.')[0])
+        if not files: # If no files in the directory
+            last_file_number = -1
+        else:
+            last_file_number = int(files[-1].split('.')[0])
     next_file_number = last_file_number+1
-    next_image_file = str(next_file_number).zfill(6)+".jpg"
+    
+    # Determine File Names
+    next_image_file = image_path+str(next_file_number).zfill(6)+".jpg"
+    next_vel_file = vel_path+str(next_file_number).zfill(6)+".txt"
+    
+    # Save Files
+    cv2.imwrite(next_image_file,small_image)
+    with open(next_vel_file) as f:
+        f.write('{}\t{}'.format(latest_cmd_vel.linear.x,latest_cmd_vel.angular.z))
+    
+    # Increment file number
     last_file_number = next_file_number
-    path = '/home/aditya/data/images'
-    cv2.imwrite(os.path.join(path ,next_image_file),small_image)
-    #cv2.imshow("data.png",small_image)
-    #cv2.waitKey(0)
-    #cv2.destroyAllWindows()
-
-def cmd_vel_save(file_number,path,data):
-    file_object = open(os.path.join(path,file_number),"w")
-    file_object.write(str(data))
-    file_object.close()
 
 def cmd_vel_callback(data):
-    cmd_vel_save(str(next_file_number).zfill(6)+".txt",'/home/aditya/data/cmd_vel',data)
+    global latest_cmd_vel
+    latest_cmd_vel = data;
 
-
-
-
-
-
-listener()
+rospy.init_node('data_collection_node',anonymous=True)
+rospy.Subscriber('/camera/color/image_raw',Image,image_callback)
+rospy.Subscriber('/cmd_vel',Twist,cmd_vel_callback)
+rospy.spin()
