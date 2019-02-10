@@ -12,8 +12,8 @@ latest_cmd_vel = 0
 last_file_number = -1
 next_file_number = 0
 cv_bridge = CvBridge()
-image_path = '/home/aditya/data/images/'
-vel_path = '/home/aditya/data/vel/'
+image_path = '/home/nvidia/data/images/'
+vel_path = '/home/nvidia/data/cmd_vel/'
 
 def image_callback(data):
     global last_file_number,next_file_number,latest_cmd_vel,image_path,vel_path,cv_bridge
@@ -29,7 +29,7 @@ def image_callback(data):
     mask = cv2.inRange(hsv, lower_range, upper_range)       # converted black and white image
     small_image = cv2.resize(mask,(32,32))    # resize to a 32x32 image
     if last_file_number==-1:
-        files = os.listdir("/home/aditya/data/cmd_vel")
+        files = os.listdir("/home/nvidia/data/cmd_vel")
         files.sort()
         if not files: # If no files in the directory
             last_file_number = -1
@@ -43,9 +43,9 @@ def image_callback(data):
     
     # Save Files
     cv2.imwrite(next_image_file,small_image)
-    with open(next_vel_file) as f:
+    with open(os.path.join(vel_path, next_vel_file),"w") as f:
         f.write('{}\t{}'.format(latest_cmd_vel.linear.x,latest_cmd_vel.angular.z))
-    
+    f.close()
     # Increment file number
     last_file_number = next_file_number
 
