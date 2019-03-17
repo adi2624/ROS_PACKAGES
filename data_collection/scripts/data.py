@@ -7,8 +7,8 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import rospy
 import numpy as np
-
-latest_cmd_vel = 0
+from scipy import ndimage
+latest_cmd_vel = Twist()
 last_file_number = -1
 next_file_number = 0
 bridge = CvBridge()
@@ -27,9 +27,12 @@ def image_callback(data):
     cv_image = bridge.imgmsg_to_cv2(data,desired_encoding="bgr8")   #use bgr8 instead of passthrough otherwise the orange color tape will appear to be blue.
     blur = cv2.GaussianBlur(cv_image,(5,5),0)
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-    lower_range = np.array([hsv_array[0]-2,0,hsv_array[2]-20],dtype=np.uint8)
-    upper_range = np.array([hsv_array[0]+2,255,hsv_array[2]],dtype=np.uint8)
-    mask = cv2.inRange(hsv, lower_range, upper_range)       # converted black and white image
+    lower_range = np.array([21,0,0])
+    upper_range = np.array([81,255,255])
+    mask = cv2.inRange(hsv, lower_range, upper_range)
+    outputImage = ndimage.median filter(inputImage, 5)
+    cv2.imshow("mask",mask)
+    cv2.waitKey(0)       # converted black and white image
     small_image = cv2.resize(mask,(32,32))    # resize to a 32x32 image
     if last_file_number==-1:
         files = os.listdir("/home/nvidia/data/cmd_vel")

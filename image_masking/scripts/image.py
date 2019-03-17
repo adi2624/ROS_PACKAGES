@@ -19,12 +19,25 @@ def callback(data):
     cv_image = bridge.imgmsg_to_cv2(data,desired_encoding="bgr8")   #use bgr8 instead of passthrough otherwise the orange color tape will appear to be blue.
     blur = cv2.GaussianBlur(cv_image,(5,5),0)
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-    lower_range = np.array([hsv_array[0]-2,0,hsv_array[2]-20],dtype=np.uint8)
-    upper_range = np.array([hsv_array[0]+2,255,hsv_array[2]],dtype=np.uint8)
-    mask = cv2.inRange(hsv, lower_range, upper_range)
-    #cv2.imshow("mask",mask)
-    #cv2.waitKey(0)
-    talker(mask)
+
+    rows = hsv.shape[0]
+    cols = hsv.shape[1]
+
+    for i in range(0,rows):
+        for j in range(0,cols):
+            result = binarize_image(hsv[i][j])
+            if result == False:
+                hsv[i][j][0]=0
+                hsv[i][j][1]=0
+                hsv[i][j][2]=0
+
+    #lower_range = np.array([hsv_array[0]-2,0,hsv_array[2]-20],dtype=np.uint8)
+    #upper_range = np.array([hsv_array[0]+2,255,hsv_array[2]],dtype=np.uint8)
+    #mask = cv2.inRange(hsv, lower_range, upper_range)
+
+    #cv2.imshow("mask",hsv)
+   # cv2.waitKey(0)
+    talker(hsv)
     
 
 def listener():
@@ -38,6 +51,26 @@ def talker(mask):
    # rospy.init_node('binary_image_publisher',anonymous=True)
     pub.publish(bridge.cv2_to_imgmsg(mask))
 
+def binarize_image(hsv):
+    isGood = False
+    hue = hsv[0]
+    sat = hsv[1]
+    val = hsv[2]
+    if val>168:
+        return True
+    if hue>49.5:
+        return False
+    if hue>33.5:
+        if sat>71.5:
+            return True
+        return False
+    if hue<=10.5:
+        return False
+    if sat<=40:
+        return False
+    if hue<=14.5:
+        return False
+    return True
 def test(data):
     global last_hsv_values
     original_image = bridge.imgmsg_to_cv2(data,desired_encoding="bgr8")
