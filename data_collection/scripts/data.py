@@ -7,7 +7,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 import rospy
 import numpy as np
-from scipy import ndimage
+import matplotlib as plt
 latest_cmd_vel = Twist()
 last_file_number = -1
 next_file_number = 0
@@ -27,13 +27,22 @@ def image_callback(data):
     cv_image = bridge.imgmsg_to_cv2(data,desired_encoding="bgr8")   #use bgr8 instead of passthrough otherwise the orange color tape will appear to be blue.
     blur = cv2.GaussianBlur(cv_image,(5,5),0)
     hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-    lower_range = np.array([21,0,0])
-    upper_range = np.array([81,255,255])
-    mask = cv2.inRange(hsv, lower_range, upper_range)
-    outputImage = ndimage.median filter(inputImage, 5)
-    cv2.imshow("mask",mask)
-    cv2.waitKey(0)       # converted black and white image
-    small_image = cv2.resize(mask,(32,32))    # resize to a 32x32 image
+    
+    rows = hsv.shape[0]
+    cols = hsv.shape[1]
+
+    low = np.array([0,0,226])
+    high = np.array([255,255,255])
+    mask = cv2.inRange(hsv,low,high)
+
+    
+
+       
+    small_image = cv2.resize(mask,(32,32))
+
+    binarized_image = cv2.bitwise_and(small_image,1)     
+
+        
     if last_file_number==-1:
         files = os.listdir("/home/nvidia/data/cmd_vel")
         files.sort()
@@ -44,11 +53,11 @@ def image_callback(data):
     next_file_number = last_file_number+1
     
     # Determine File Names
-    next_image_file = image_path+str(next_file_number).zfill(6)+".jpg"
-    next_vel_file = vel_path+str(next_file_number).zfill(6)+".txt"
+    next_image_file = image_path+str(next_file_number).zfill(8)+".jpg"
+    next_vel_file = vel_path+str(next_file_number).zfill(8)+".txt"
     
     # Save Files
-    cv2.imwrite(next_image_file,small_image)
+    cv2.imwrite(next_image_file,binarized_image)
     with open(os.path.join(vel_path, next_vel_file),"w") as f:
         f.write('{}\t{}'.format(latest_cmd_vel.linear.x,latest_cmd_vel.angular.z))
     f.close()
@@ -58,6 +67,7 @@ def image_callback(data):
 def cmd_vel_callback(data):
     global latest_cmd_vel
     latest_cmd_vel = data;
+
 
 
 def hsv_filter(data):

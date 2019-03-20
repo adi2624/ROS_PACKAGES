@@ -23,13 +23,16 @@ def callback(data):
     rows = hsv.shape[0]
     cols = hsv.shape[1]
 
-    for i in range(0,rows):
-        for j in range(0,cols):
-            result = binarize_image(hsv[i][j])
-            if result == False:
-                hsv[i][j][0]=0
-                hsv[i][j][1]=0
-                hsv[i][j][2]=0
+    
+    mask = cv2.inRange(hsv,np.array([0,0,226]),np.array([255,255,255]))
+    
+    
+   
+
+    small_image = cv2.resize(mask,(32,32))
+
+    binarized_image = cv2.bitwise_and(small_image,1)     
+
 
     #lower_range = np.array([hsv_array[0]-2,0,hsv_array[2]-20],dtype=np.uint8)
     #upper_range = np.array([hsv_array[0]+2,255,hsv_array[2]],dtype=np.uint8)
@@ -37,7 +40,7 @@ def callback(data):
 
     #cv2.imshow("mask",hsv)
    # cv2.waitKey(0)
-    talker(hsv)
+    talker(mask)
     
 
 def listener():
